@@ -6,6 +6,7 @@ import os
 import torch
 
 from .nvcore import common, download, interp, sr
+from .nvcore import ngx as ngx_dlisr
 
 RIFE_URL = ("https://huggingface.co/yuvraj108c/rife-onnx/resolve/main/"
             "rife49_ensemble_True_scale_1_sim.onnx")
@@ -270,6 +271,43 @@ class NVVFX_FrameInterpolate:
         fl = [frames[i] for i in range(frames.shape[0])]
         out = interp.interpolate(fl, rate)
         return (torch.stack(out), len(out))
+
+
+# ---------------------------------------------------------------------------
+class NVVFX_DLISR_Upscale:
+    """NVIDIA DLISR (Deep Learning Image Super-Resolution) - the same AI photo
+    upscaler NVIDIA App uses. Pure detail-preserving 2x/4x/8x upscale, no
+    hallucination. Runs on the driver's NGX pipeline (no extra models to download
+    when NVIDIA App / NGX OTA cache is present; a bundled snippet is used as a
+    fallback). Requires an RTX GPU and recent GeForce drivers."""
+
+    SCALES = {"2x": 2, "4x": 4, "8x": 8}
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "scale": (list(cls.SCALES.keys()), {"default": "2x"}),
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+    FUNCTION = "execute"
+    CATEGORY = "image/upscaling"
+
+    def execute(self, image, scale):
+        factor = self.SCALES[scale]
+        session = ngx_dlisr.get_session()
+        frames = [image[i] for i in range(image.shape[0])]
+        out = []
+        for f in frames:
+            arr = (f.cpu().numpy() * 255.0).round().clip(0, 255).astype("uint8")
+            up = session.upscale(arr, factor)
+            t = torch.from_numpy(up.astype("float32") / 255.0)
+            out.append(t)
+        return (torch.stack(out),)
 
 
 # ---------------------------------------------------------------------------
