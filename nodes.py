@@ -105,6 +105,7 @@ class RTXMT_ModelManager:
         }
 
     RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("状态",)
     FUNCTION = "run"
     CATEGORY = "图像/超分放大"
 
@@ -150,7 +151,7 @@ class RTXMT_VSR_Upscale:
         }
 
     RETURN_TYPES = ("IMAGE", "FLOAT", "INT", "INT")
-    RETURN_NAMES = ("image", "scale_factor", "width", "height")
+    RETURN_NAMES = ("图像", "放大倍数", "宽", "高")
     FUNCTION = "execute"
     CATEGORY = "图像/超分放大"
 
@@ -216,7 +217,7 @@ class RTXMT_VSR_Upscale_Tiled(RTXMT_VSR_Upscale):
         }
 
     RETURN_TYPES = ("IMAGE", "FLOAT")
-    RETURN_NAMES = ("image", "scale_factor")
+    RETURN_NAMES = ("图像", "放大倍数")
     FUNCTION = "execute_tiled"
     CATEGORY = "图像/超分放大"
 
@@ -263,7 +264,7 @@ class RTXMT_FrameInterpolate:
         }
 
     RETURN_TYPES = ("IMAGE", "INT")
-    RETURN_NAMES = ("frames", "frame_count")
+    RETURN_NAMES = ("帧序列", "帧数")
     FUNCTION = "execute"
     CATEGORY = "视频"
 
@@ -294,7 +295,7 @@ class RTXMT_DLISR_Upscale:
         }
 
     RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
+    RETURN_NAMES = ("图像",)
     FUNCTION = "execute"
     CATEGORY = "图像/超分放大"
 
@@ -327,17 +328,18 @@ class RTXMT_VideoPipeline:
                 "fps_override": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 240.0}),
                 "auto_download": ("BOOLEAN", {"default": True}),
             },
+            "optional": {
+                "images": ("IMAGE",),
+            },
         }
 
     RETURN_TYPES = ("STRING", "INT", "INT")
-    RETURN_NAMES = ("output_path", "out_frames", "out_fps")
+    RETURN_NAMES = ("输出路径", "输出帧数", "输出帧率")
     FUNCTION = "execute"
     CATEGORY = "视频"
 
     def execute(self, video_path, output_path, quality_tier, preset, fps_multiplier,
-                fps_override, auto_download):
-        if not video_path or not os.path.isfile(video_path):
-            raise RuntimeError(f"video_path not found: {video_path}")
+                fps_override, auto_download, images=None):
         import cv2
 
         info = common.arch_info()
@@ -348,15 +350,28 @@ class RTXMT_VideoPipeline:
         if fps_multiplier > 1:
             _ensure_rife(auto_download)
 
-        cap = cv2.VideoCapture(video_path)
-        if not cap.isOpened():
-            raise RuntimeError("Failed to open video")
-        fps = fps_override if fps_override > 0 else cap.get(cv2.CAP_PROP_FPS) or 30.0
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-
-        if not output_path:
-            root, ext = os.path.splitext(video_path)
-            output_path = f"{root}_nvvfx{ext}"
+        if images is not None:
+            # 工作流图像帧作为源（忽略 video_path）
+            src_frames = [images[i].cpu() for i in range(images.shape[0])]
+            total = len(src_frames)
+            fps = fps_override if fps_override > 0 else 30.0
+            if not output_path:
+                try:
+                    from folder_paths import get_output_directory
+                    output_path = os.path.join(get_output_directory(), "rtxmt_pipeline.mp4")
+                except Exception:
+                    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rtxmt_pipeline.mp4")
+        else:
+            if not video_path or not os.path.isfile(video_path):
+                raise RuntimeError(f"未找到视频文件：{video_path}（或直接连入 images 图像）")
+            cap = cv2.VideoCapture(video_path)
+            if not cap.isOpened():
+                raise RuntimeError("无法打开视频文件")
+            fps = fps_override if fps_override > 0 else cap.get(cv2.CAP_PROP_FPS) or 30.0
+            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+            if not output_path:
+                root, ext = os.path.splitext(video_path)
+                output_path = f"{root}_nvvfx{ext}"
 
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         writer = None
@@ -385,11 +400,7 @@ class RTXMT_VideoPipeline:
             else:
                 window = []
 
-        while True:
-            ok, frame = cap.read()
-            if not ok:
-                break
-            img = torch.from_numpy(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).float() / 255.0
+        for img in src_frames:
             if sel_model is not None:
                 img = sr.upsample(img, sel_model, sel_strength, sm=sm).cpu()
             window.append(img)

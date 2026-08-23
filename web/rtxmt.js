@@ -116,6 +116,32 @@ function drawCollapsedStrip(ctx, node, badge) {
     ctx.restore();
 }
 
+// 连接点（输入/输出）标签中英映射
+const SOCKET_CN = {
+    image: "图像",
+    scale_factor: "放大倍数",
+    width: "宽",
+    height: "高",
+    frames: "帧序列",
+    frame_count: "帧数",
+    output_path: "输出路径",
+    out_frames: "输出帧数",
+    out_fps: "输出帧率",
+    status: "状态",
+    images: "图像帧",
+};
+
+function localizeSockets(node) {
+    for (const s of node.inputs || []) {
+        const cn = SOCKET_CN[s.name];
+        if (cn && s.label !== cn) s.label = cn;
+    }
+    for (const s of node.outputs || []) {
+        const cn = SOCKET_CN[s.name];
+        if (cn && s.label !== cn) s.label = cn;
+    }
+}
+
 function localizeWidgets(node) {
     if (!node.widgets) return;
     for (const w of node.widgets) {
@@ -168,10 +194,19 @@ app.registerExtension({
             } catch (e) { /* ignore */ }
         };
 
+        const baseOnConn = nodeType.prototype.onConnectionsChange;
+        nodeType.prototype.onConnectionsChange = function (side) {
+            const r = baseOnConn ? baseOnConn.apply(this, arguments) : undefined;
+            try { if (side === 1) localizeSockets(this); } catch (e) {}
+            return r;
+        };
+
         const baseDrawBg = nodeType.prototype.onDrawBackground;
         nodeType.prototype.onDrawBackground = function (ctx) {
             if (baseDrawBg) baseDrawBg.apply(this, arguments);
             try {
+                localizeSockets(this);   // 幂等，输入点可能晚于 onNodeCreated 创建
+                localizeWidgets(this);
                 if (this.flags && this.flags.collapsed) {
                     drawCollapsedStrip(ctx, this, this._rtxBadge || badge);
                 } else {
