@@ -29,7 +29,7 @@ def _load_session():
         if not os.path.isfile(common.RIFE_MODEL):
             raise FileNotFoundError(
                 f"RIFE interpolation model missing: {common.RIFE_MODEL}\n"
-                "Enable 'auto_download' (or run the NVVFX Model Manager node with "
+                "Enable 'auto_download' (or run the RTX Model Manager node with "
                 "action=download_rife) to fetch it automatically.")
         import onnxruntime as ort
         common.preload_ort_cuda_deps()

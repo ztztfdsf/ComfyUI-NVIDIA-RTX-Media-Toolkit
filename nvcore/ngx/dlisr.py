@@ -104,8 +104,8 @@ class _Session:
                 self.patched_offset = off
                 return True
         except Exception as e:  # noqa: BLE001
-            print(f"[NVVFX-Pro] DLISR app-id patch skipped: {e}")
-        print("[NVVFX-Pro] Warning: DLISR app-id patch did not apply; "
+            print(f"[RTX-Media-Toolkit] DLISR app-id patch skipped: {e}")
+        print("[RTX-Media-Toolkit] Warning: DLISR app-id patch did not apply; "
               "if upscaling silently no-ops, your driver build may need an update.")
         return False
 
@@ -163,7 +163,7 @@ def get_session():
         if _state is None:
             dll, _ = discovery.setup_all()
             _state = _Session(dll)
-            print(f"[NVVFX-Pro] DLISR ready (NGX core: {dll})")
+            print(f"[RTX-Media-Toolkit] DLISR ready (NGX core: {dll})")
         return _state
 
 

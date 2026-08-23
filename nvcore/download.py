@@ -71,11 +71,11 @@ def download_sdk(sm=None, progress=print):
     url = sdk_url(arch_name)
 
     if not os.path.isfile(exe_path) or os.path.getsize(exe_path) < 700_000_000:
-        progress(f"[NVVFX-Pro] Downloading NVIDIA VFX SDK {common.SDK_VERSION} for {arch_name} "
+        progress(f"[RTX-Media-Toolkit] Downloading NVIDIA VFX SDK {common.SDK_VERSION} for {arch_name} "
                  f"({url}) ... this is ~750 MB, one time only.")
         _download_resume(url, exe_path, progress)
 
-    progress(f"[NVVFX-Pro] Extracting SDK package with 7-Zip ...")
+    progress(f"[RTX-Media-Toolkit] Extracting SDK package with 7-Zip ...")
     tmp = os.path.join(DOWNLOAD_DIR, f"extract_{arch_name}")
     if os.path.isdir(tmp):
         shutil.rmtree(tmp, ignore_errors=True)
@@ -136,6 +136,6 @@ def _download_resume(url, path, progress):
             if total:
                 pct = done * 100 // total
                 if pct % 10 == 0:
-                    progress(f"[NVVFX-Pro] download {pct}% ({done // 1048576} / {total // 1048576} MB)")
+                    progress(f"[RTX-Media-Toolkit] download {pct}% ({done // 1048576} / {total // 1048576} MB)")
     os.replace(tmp, path)
-    progress(f"[NVVFX-Pro] download complete: {os.path.getsize(path) // 1048576} MB")
+    progress(f"[RTX-Media-Toolkit] download complete: {os.path.getsize(path) // 1048576} MB")

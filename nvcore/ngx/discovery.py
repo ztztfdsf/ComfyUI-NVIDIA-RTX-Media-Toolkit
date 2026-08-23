@@ -37,8 +37,8 @@ DLISR_APPID = 0xE658703
 DLISR_APPID_DEC = 241534723  # decimal form of DLISR_APPID
 
 SNIPPET_DOWNLOAD_URLS = [
-    "https://raw.githubusercontent.com/ztztfdsf/ComfyUI-NVVFX-Pro/main/models/dlisr/160_0000000.bin",
-    "https://ghproxy.net/https://raw.githubusercontent.com/ztztfdsf/ComfyUI-NVVFX-Pro/main/models/dlisr/160_0000000.bin",
+    "https://raw.githubusercontent.com/ztztfdsf/ComfyUI-NVIDIA-RTX-Media-Toolkit/main/models/dlisr/160_0000000.bin",
+    "https://ghproxy.net/https://raw.githubusercontent.com/ztztfdsf/ComfyUI-NVIDIA-RTX-Media-Toolkit/main/models/dlisr/160_0000000.bin",
 ]
 
 _config_patched = False
@@ -175,7 +175,7 @@ def _download_snippet(dst):
     last_err = None
     for url in SNIPPET_DOWNLOAD_URLS:
         try:
-            print(f"[NVVFX-Pro] Downloading DLISR snippet ({os.path.getsize(dst)//1024 if os.path.exists(dst) else 4100} KB expected) ...")
+            print(f"[RTX-Media-Toolkit] Downloading DLISR snippet ({os.path.getsize(dst)//1024 if os.path.exists(dst) else 4100} KB expected) ...")
             urllib.request.urlretrieve(url, dst)
             if os.path.isfile(dst) and os.path.getsize(dst) > 1_000_000:
                 return dst

@@ -22,7 +22,7 @@ def _ensure_sr(sm, auto_download):
     else:
         raise RuntimeError(
             f"NVIDIA VSR SDK engines for {sm} are not installed yet.\n"
-            "Enable 'auto_download' on this node (or run the 'NVVFX Model Manager' "
+            "Enable 'auto_download' on this node (or run the 'RTX Model Manager' "
             "node with action=download_sdk) to fetch them automatically "
             "(~750 MB, one time).")
 
@@ -33,14 +33,14 @@ def _ensure_rife(auto_download):
     if auto_download:
         import urllib.request
         os.makedirs(common.RIFE_DIR, exist_ok=True)
-        print(f"[NVVFX-Pro] Downloading RIFE interpolation model ...")
+        print(f"[RTX-Media-Toolkit] Downloading RIFE interpolation model ...")
         urllib.request.urlretrieve(RIFE_URL, common.RIFE_MODEL)
         if not os.path.isfile(common.RIFE_MODEL) or os.path.getsize(common.RIFE_MODEL) < 1_000_000:
             raise RuntimeError("RIFE model download failed.")
     else:
         raise RuntimeError(
             "RIFE interpolation model is not installed. Enable 'auto_download' "
-            "(or run 'NVVFX Model Manager' with action=download_rife) to fetch it.")
+            "(or run 'RTX Model Manager' with action=download_rife) to fetch it.")
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ def _tier_preset_to_model(tier, preset):
     return model, strength, scale
 
 
-class NVVFX_ModelManager:
+class RTXMT_ModelManager:
     """Check / install NVIDIA SDK engines and RIFE model."""
 
     @classmethod
@@ -126,7 +126,7 @@ class NVVFX_ModelManager:
 
 
 # ---------------------------------------------------------------------------
-class NVVFX_SuperRes:
+class RTXMT_VSR_Upscale:
     """Image super-resolution with NVIDIA RTX VSR.
     DLSS-style: quality tier (DLAA..Ultra Performance) x preset (A..M),
     plus manual model / passes / target size for full control."""
@@ -198,7 +198,7 @@ class NVVFX_SuperRes:
 
 
 # ---------------------------------------------------------------------------
-class NVVFX_SuperRes_Tiled(NVVFX_SuperRes):
+class RTXMT_VSR_Upscale_Tiled(RTXMT_VSR_Upscale):
     """Tiled RTX VSR for arbitrarily large images without downscaling."""
 
     @classmethod
@@ -248,7 +248,7 @@ class NVVFX_SuperRes_Tiled(NVVFX_SuperRes):
 
 
 # ---------------------------------------------------------------------------
-class NVVFX_FrameInterpolate:
+class RTXMT_FrameInterpolate:
     """Video frame interpolation. Input: batch of frames. rate: 2/4/8."""
 
     @classmethod
@@ -274,7 +274,7 @@ class NVVFX_FrameInterpolate:
 
 
 # ---------------------------------------------------------------------------
-class NVVFX_DLISR_Upscale:
+class RTXMT_DLISR_Upscale:
     """NVIDIA DLISR (Deep Learning Image Super-Resolution) - the same AI photo
     upscaler NVIDIA App uses. Pure detail-preserving 2x/4x/8x upscale, no
     hallucination. Runs on the driver's NGX pipeline (no extra models to download
@@ -311,7 +311,7 @@ class NVVFX_DLISR_Upscale:
 
 
 # ---------------------------------------------------------------------------
-class NVVFX_VideoPipeline:
+class RTXMT_VideoPipeline:
     """Video file -> (RTX VSR super resolution) -> (RIFE interpolation) -> video file."""
 
     @classmethod
@@ -396,7 +396,7 @@ class NVVFX_VideoPipeline:
                 flush_window(keep_last=True)
             idx += 1
             if idx % 50 == 0:
-                print(f"[NVVFX-Pro] frame {idx}/{total}")
+                print(f"[RTX-Media-Toolkit] frame {idx}/{total}")
         flush_window(keep_last=False)
         if writer is not None:
             writer.release()

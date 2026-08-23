@@ -1,28 +1,28 @@
 from .nodes import (
-    NVVFX_ModelManager,
-    NVVFX_SuperRes,
-    NVVFX_SuperRes_Tiled,
-    NVVFX_DLISR_Upscale,
-    NVVFX_FrameInterpolate,
-    NVVFX_VideoPipeline,
+    RTXMT_ModelManager,
+    RTXMT_VSR_Upscale,
+    RTXMT_VSR_Upscale_Tiled,
+    RTXMT_DLISR_Upscale,
+    RTXMT_FrameInterpolate,
+    RTXMT_VideoPipeline,
 )
 
 NODE_CLASS_MAPPINGS = {
-    "NVVFX_ModelManager": NVVFX_ModelManager,
-    "NVVFX_SuperRes": NVVFX_SuperRes,
-    "NVVFX_SuperRes_Tiled": NVVFX_SuperRes_Tiled,
-    "NVVFX_DLISR_Upscale": NVVFX_DLISR_Upscale,
-    "NVVFX_FrameInterpolate": NVVFX_FrameInterpolate,
-    "NVVFX_VideoPipeline": NVVFX_VideoPipeline,
+    "RTXMT_ModelManager": RTXMT_ModelManager,
+    "RTXMT_VSR_Upscale": RTXMT_VSR_Upscale,
+    "RTXMT_VSR_Upscale_Tiled": RTXMT_VSR_Upscale_Tiled,
+    "RTXMT_DLISR_Upscale": RTXMT_DLISR_Upscale,
+    "RTXMT_FrameInterpolate": RTXMT_FrameInterpolate,
+    "RTXMT_VideoPipeline": RTXMT_VideoPipeline,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "NVVFX_ModelManager": "NVVFX Model Manager (driver/models)",
-    "NVVFX_SuperRes": "NVVFX RTX VSR Super Resolution",
-    "NVVFX_SuperRes_Tiled": "NVVFX RTX VSR Super Resolution (Tiled)",
-    "NVVFX_DLISR_Upscale": "NVVFX DLISR AI Photo Upscale (2x/4x/8x)",
-    "NVVFX_FrameInterpolate": "NVVFX Frame Interpolate (RIFE)",
-    "NVVFX_VideoPipeline": "NVVFX Video Pipeline (SR + Interp)",
+    "RTXMT_ModelManager": "RTX Model Manager (driver/models)",
+    "RTXMT_VSR_Upscale": "RTX VSR Video Super Resolution",
+    "RTXMT_VSR_Upscale_Tiled": "RTX VSR Video Super Resolution (Tiled)",
+    "RTXMT_DLISR_Upscale": "RTX DLISR AI Photo Upscale (2x/4x/8x)",
+    "RTXMT_FrameInterpolate": "RIFE Frame Interpolate (2x/4x/8x)",
+    "RTXMT_VideoPipeline": "RTX Video Pipeline (SR + Interp)",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

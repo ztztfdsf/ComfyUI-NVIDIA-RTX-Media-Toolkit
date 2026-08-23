@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Shared paths / environment setup for NVVFX Pro."""
+"""Shared paths / environment setup for RTX Media Toolkit."""
 
 import ctypes
 import glob

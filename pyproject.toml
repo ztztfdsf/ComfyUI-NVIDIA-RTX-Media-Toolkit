@@ -1,5 +1,5 @@
 [project]
-name = "ComfyUI-NVVFX-Pro"
+name = "ComfyUI-NVIDIA-RTX-Media-Toolkit"
 version = "1.1.0"
 description = "NVIDIA RTX Video Super Resolution + DLISR AI photo upscale (2x/4x/8x) + RIFE frame interpolation for ComfyUI. DLSS-style quality tiers (DLAA..Ultra Performance) x presets (A..M), FPS multiplier, per-architecture (RTX 20/30/40/50) model auto-download."
 readme = "README.md"
@@ -12,7 +12,7 @@ dependencies = [
 
 [tool.comfy]
 PublisherId = "ztztfdsf"
-DisplayName = "ComfyUI-NVVFX-Pro"
+DisplayName = "ComfyUI-NVIDIA-RTX-Media-Toolkit"
 Icon = "icon.png"
 
 [build-system]
