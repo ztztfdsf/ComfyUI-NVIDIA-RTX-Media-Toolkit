@@ -27,12 +27,12 @@ P_STREAM = b"CudaStream"
 
 # NVIDIA VSR models exposed to the user (engine names from the SDK)
 MODEL_DEFS = [
-    {"name": "RTX VSR 2x (conservative)", "scale": 2, "mode": 0, "max_in": 1920},
-    {"name": "RTX VSR 2x (aggressive)",   "scale": 2, "mode": 1, "max_in": 1920},
-    {"name": "RTX VSR 3x (conservative)", "scale": 3, "mode": 0, "max_in": 1280},
-    {"name": "RTX VSR 3x (aggressive)",   "scale": 3, "mode": 1, "max_in": 1280},
-    {"name": "RTX VSR 4x (conservative)", "scale": 4, "mode": 0, "max_in": 960},
-    {"name": "RTX VSR 4x (aggressive)",   "scale": 4, "mode": 1, "max_in": 960},
+    {"name": "RTX VSR 2x 保守", "scale": 2, "mode": 0, "max_in": 1920},
+    {"name": "RTX VSR 2x 激进",   "scale": 2, "mode": 1, "max_in": 1920},
+    {"name": "RTX VSR 3x 保守", "scale": 3, "mode": 0, "max_in": 1280},
+    {"name": "RTX VSR 3x 激进",   "scale": 3, "mode": 1, "max_in": 1280},
+    {"name": "RTX VSR 4x 保守", "scale": 4, "mode": 0, "max_in": 960},
+    {"name": "RTX VSR 4x 激进",   "scale": 4, "mode": 1, "max_in": 960},
 ]
 MODEL_NAMES = [m["name"] for m in MODEL_DEFS]
 _MODEL_BY_NAME = {m["name"]: m for m in MODEL_DEFS}

@@ -48,11 +48,11 @@ def _ensure_rife(auto_download):
 # ---------------------------------------------------------------------------
 # 超分辨率档位 (DLSS-style quality tiers) -> target scale
 QUALITY_TIERS = [
-    "DLAA (native 1x)",
-    "Quality (2x)",
-    "Balanced (2x)",
-    "Performance (3x)",
-    "Ultra Performance (4x)",
+    "DLAA（原生 1x）",
+    "质量 (2x)",
+    "均衡 (2x)",
+    "性能 (3x)",
+    "极致性能 (4x)",
 ]
 
 # DLSS4-style presets A..M -> (mode: conservative=0/aggressive=1, strength)
@@ -63,16 +63,17 @@ PRESETS = [
     ("I", 0, 0.60), ("J", 1, 0.50), ("K", 1, 0.70), ("L", 1, 0.85),
     ("M", 1, 1.00),
 ]
-PRESET_NAMES = [f"Preset {p[0]} (mode={'agg' if p[1] else 'con'}, str {p[2]:.2f})" for p in PRESETS]
+_MODE_CN = {0: "保守", 1: "激进"}
+PRESET_NAMES = [f"预设 {p[0]}（{_MODE_CN[p[1]]}，强度 {p[2]:.2f}）" for p in PRESETS]
 _PRESET_LOOKUP = {p[0]: p for p in PRESETS}
 
 # tier -> target scale
 _TIER_SCALE = {
-    "DLAA (native 1x)": 1,
-    "Quality (2x)": 2,
-    "Balanced (2x)": 2,
-    "Performance (3x)": 3,
-    "Ultra Performance (4x)": 4,
+    "DLAA（原生 1x）": 1,
+    "质量 (2x)": 2,
+    "均衡 (2x)": 2,
+    "性能 (3x)": 3,
+    "极致性能 (4x)": 4,
 }
 
 _MODEL_BY_SCALE_MODE = {(m["scale"], m["mode"]): m["name"] for m in sr.MODEL_DEFS}
@@ -82,7 +83,7 @@ def _tier_preset_to_model(tier, preset):
     """Map (quality tier, preset letter) to an NVIDIA VSR model name + strength.
     Returns (model_name, strength, target_scale)."""
     scale = _TIER_SCALE[tier]
-    letter = preset.split()[1]  # 'Preset X ...'
+    letter = preset.split()[1]  # '预设 X ...'
     _m, mode, strength = _PRESET_LOOKUP[letter]
     if scale == 1:
         return None, 0.0, 1
@@ -99,29 +100,29 @@ class RTXMT_ModelManager:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "action": (["check_status", "download_sdk", "download_rife", "download_all"],),
+                "action": (["检查状态", "下载SDK引擎", "下载RIFE模型", "全部下载"],),
             },
         }
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "run"
-    CATEGORY = "image/upscaling"
+    CATEGORY = "图像/超分放大"
 
     def run(self, action):
         lines = []
         try:
             info = common.arch_info()
-            lines.append(f"GPU: {torch.cuda.get_device_name(0)} ({info['label']}, {info['sm']})")
-            lines.append(f"VSR engines installed: {download.models_present(info['sm'])}")
-            lines.append(f"RIFE model installed: {os.path.isfile(common.RIFE_MODEL)}")
-            if action in ("download_sdk", "download_all"):
+            lines.append(f"显卡：{torch.cuda.get_device_name(0)}（{info['label']}，{info['sm']}）")
+            lines.append(f"VSR 引擎已安装：{'是' if download.models_present(info['sm']) else '否'}")
+            lines.append(f"RIFE 模型已安装：{'是' if os.path.isfile(common.RIFE_MODEL) else '否'}")
+            if action in ("下载SDK引擎", "全部下载"):
                 r = download.download_sdk(progress=print)
                 lines.append(r["message"])
-            if action in ("download_rife", "download_all"):
+            if action in ("下载RIFE模型", "全部下载"):
                 _ensure_rife(auto_download=True)
-                lines.append("RIFE model installed.")
+                lines.append("RIFE 模型已安装。")
         except Exception as e:
-            lines.append(f"ERROR: {e}")
+            lines.append(f"错误：{e}")
         return ("\n".join(lines),)
 
 
@@ -136,12 +137,12 @@ class RTXMT_VSR_Upscale:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "quality_tier": (QUALITY_TIERS, {"default": "Ultra Performance (4x)"}),
-                "preset": (PRESET_NAMES, {"default": "Preset K (agg, str 0.70)"}),
+                "quality_tier": (QUALITY_TIERS, {"default": QUALITY_TIERS[4]}),
+                "preset": (PRESET_NAMES, {"default": PRESET_NAMES[10]}),
                 "passes": ("INT", {"default": 1, "min": 1, "max": 6, "step": 1}),
                 "target_long_side": ("INT", {"default": 0, "min": 0, "max": 16384, "step": 8}),
                 "manual_model": ("BOOLEAN", {"default": False}),
-                "model": (sr.MODEL_NAMES, {"default": "RTX VSR 4x (aggressive)"}),
+                "model": (sr.MODEL_NAMES, {"default": "RTX VSR 4x 激进"}),
                 "strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05}),
                 "keep_input_limits": ("BOOLEAN", {"default": True}),
                 "auto_download": ("BOOLEAN", {"default": True}),
@@ -151,7 +152,7 @@ class RTXMT_VSR_Upscale:
     RETURN_TYPES = ("IMAGE", "FLOAT", "INT", "INT")
     RETURN_NAMES = ("image", "scale_factor", "width", "height")
     FUNCTION = "execute"
-    CATEGORY = "image/upscaling"
+    CATEGORY = "图像/超分放大"
 
     def execute(self, image, quality_tier, preset, passes, target_long_side,
                 manual_model, model, strength, keep_input_limits, auto_download):
@@ -206,7 +207,7 @@ class RTXMT_VSR_Upscale_Tiled(RTXMT_VSR_Upscale):
         return {
             "required": {
                 "image": ("IMAGE",),
-                "model": (sr.MODEL_NAMES, {"default": "RTX VSR 2x (aggressive)"}),
+                "model": (sr.MODEL_NAMES, {"default": "RTX VSR 2x 激进"}),
                 "strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05}),
                 "tile_size": ("INT", {"default": 512, "min": 128, "max": 1920, "step": 8}),
                 "overlap": ("INT", {"default": 16, "min": 0, "max": 64, "step": 8}),
@@ -217,7 +218,7 @@ class RTXMT_VSR_Upscale_Tiled(RTXMT_VSR_Upscale):
     RETURN_TYPES = ("IMAGE", "FLOAT")
     RETURN_NAMES = ("image", "scale_factor")
     FUNCTION = "execute_tiled"
-    CATEGORY = "image/upscaling"
+    CATEGORY = "图像/超分放大"
 
     def execute_tiled(self, image, model, strength, tile_size, overlap, auto_download):
         info = common.arch_info()
@@ -264,7 +265,7 @@ class RTXMT_FrameInterpolate:
     RETURN_TYPES = ("IMAGE", "INT")
     RETURN_NAMES = ("frames", "frame_count")
     FUNCTION = "execute"
-    CATEGORY = "video"
+    CATEGORY = "视频"
 
     def execute(self, frames, rate, auto_download):
         _ensure_rife(auto_download)
@@ -288,14 +289,14 @@ class RTXMT_DLISR_Upscale:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "scale": (list(cls.SCALES.keys()), {"default": "2x"}),
+                "scale": (["2x", "4x", "8x"], {"default": "2x"}),
             },
         }
 
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("image",)
     FUNCTION = "execute"
-    CATEGORY = "image/upscaling"
+    CATEGORY = "图像/超分放大"
 
     def execute(self, image, scale):
         factor = self.SCALES[scale]
@@ -320,8 +321,8 @@ class RTXMT_VideoPipeline:
             "required": {
                 "video_path": ("STRING", {"default": ""}),
                 "output_path": ("STRING", {"default": ""}),
-                "quality_tier": (QUALITY_TIERS, {"default": "Quality (2x)"}),
-                "preset": (PRESET_NAMES, {"default": "Preset C (agg, str 0.40)"}),
+                "quality_tier": (QUALITY_TIERS, {"default": QUALITY_TIERS[1]}),
+                "preset": (PRESET_NAMES, {"default": PRESET_NAMES[2]}),
                 "fps_multiplier": ([1, 2, 4, 8], {"default": 2}),
                 "fps_override": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 240.0}),
                 "auto_download": ("BOOLEAN", {"default": True}),
@@ -331,7 +332,7 @@ class RTXMT_VideoPipeline:
     RETURN_TYPES = ("STRING", "INT", "INT")
     RETURN_NAMES = ("output_path", "out_frames", "out_fps")
     FUNCTION = "execute"
-    CATEGORY = "video"
+    CATEGORY = "视频"
 
     def execute(self, video_path, output_path, quality_tier, preset, fps_multiplier,
                 fps_override, auto_download):

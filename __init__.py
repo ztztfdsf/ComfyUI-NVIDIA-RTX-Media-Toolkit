@@ -17,12 +17,12 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "RTXMT_ModelManager": "RTX Model Manager (driver/models)",
-    "RTXMT_VSR_Upscale": "RTX VSR Video Super Resolution",
-    "RTXMT_VSR_Upscale_Tiled": "RTX VSR Video Super Resolution (Tiled)",
-    "RTXMT_DLISR_Upscale": "RTX DLISR AI Photo Upscale (2x/4x/8x)",
-    "RTXMT_FrameInterpolate": "RIFE Frame Interpolate (2x/4x/8x)",
-    "RTXMT_VideoPipeline": "RTX Video Pipeline (SR + Interp)",
+    "RTXMT_ModelManager": "RTX 模型管理器（驱动/模型）",
+    "RTXMT_VSR_Upscale": "RTX VSR 视频超分（2x/3x/4x）",
+    "RTXMT_VSR_Upscale_Tiled": "RTX VSR 视频超分·分块（任意大图）",
+    "RTXMT_DLISR_Upscale": "RTX DLISR 照片AI超分（2x/4x/8x）",
+    "RTXMT_FrameInterpolate": "RIFE 视频插帧（2x/4x/8x）",
+    "RTXMT_VideoPipeline": "RTX 视频管线（超分+插帧）",
 }
 
 WEB_DIRECTORY = "./web"

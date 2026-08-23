@@ -1,9 +1,8 @@
 /**
- * ComfyUI-NVIDIA-RTX-Media-Toolkit — frontend theme
- * NVIDIA black/green branding for all RTXMT_* nodes.
- * - #76B900 NVIDIA green accents, deep-black panels, high-contrast widgets
- * - Brand footer bar with per-node capability badge (DLISR / VSR / RIFE ...)
- * - Collapsed-mode green header strip
+ * ComfyUI-NVIDIA-RTX-Media-Toolkit — 前端主题（NVIDIA 黑绿风）
+ * - 黑底白字标题（可读性优先），NVIDIA 绿 #76B900 点缀
+ * - 节点底部品牌条：NVIDIA 眼形标 + 中文能力徽章
+ * - 全部 widget 标签中文化（仅显示层，API 参数名不变）
  */
 import { app } from "../../scripts/app.js";
 
@@ -11,21 +10,43 @@ const THEME = {
     green: "#76B900",
     greenBright: "#8fd400",
     greenDark: "#4a7300",
-    black: "#0b0e07",
-    panel: "#141a10",
-    border: "#2e3b1c",
-    text: "#e8f0dd",
-    textDim: "#9fb08a",
+    titleBg: "#101210",
+    panel: "#12140f",
     badgeText: "#101400",
+    footerText: "#0e1206",
 };
 
 const BADGES = {
-    RTXMT_DLISR_Upscale: "DLISR · PHOTO 2x/4x/8x",
-    RTXMT_VSR_Upscale: "VSR · VIDEO",
-    RTXMT_VSR_Upscale_Tiled: "VSR · TILED",
-    RTXMT_FrameInterpolate: "RIFE · INTERP",
-    RTXMT_VideoPipeline: "VSR + RIFE",
-    RTXMT_ModelManager: "DRIVER / MODELS",
+    RTXMT_DLISR_Upscale: "照片超分 DLISR",
+    RTXMT_VSR_Upscale: "视频超分 VSR",
+    RTXMT_VSR_Upscale_Tiled: "视频超分 · 分块",
+    RTXMT_FrameInterpolate: "智能插帧 RIFE",
+    RTXMT_VideoPipeline: "超分 + 插帧 一条龙",
+    RTXMT_ModelManager: "驱动与模型",
+};
+
+// widget 标签中英映射（只改显示，不动 API 参数名）
+const LABEL_CN = {
+    image: "图像",
+    scale: "放大倍数",
+    frames: "帧序列",
+    rate: "插帧倍率",
+    auto_download: "自动下载模型",
+    quality_tier: "画质档位",
+    preset: "风格预设",
+    passes: "超分次数",
+    target_long_side: "目标长边",
+    manual_model: "手动指定模型",
+    model: "模型",
+    strength: "强度",
+    keep_input_limits: "保持输入尺寸",
+    video_path: "视频路径",
+    output_path: "输出路径",
+    fps_multiplier: "帧率倍增",
+    fps_override: "帧率覆盖",
+    action: "操作",
+    tile_size: "分块尺寸",
+    overlap: "重叠像素",
 };
 
 function roundRectPath(ctx, x, y, w, h, r) {
@@ -43,58 +64,66 @@ function roundRectPath(ctx, x, y, w, h, r) {
 }
 
 function drawBrandBar(ctx, node, badge) {
-    const h = 24;
+    const h = 26;
     const w = node.size[0];
     const y = node.size[1] - h;
-    if (y < 30) return;
+    if (y < 34) return;
 
     ctx.save();
-    // gradient green footer
     const g = ctx.createLinearGradient(0, y, w, y + h);
     g.addColorStop(0, THEME.green);
     g.addColorStop(1, THEME.greenDark);
     ctx.fillStyle = g;
-    roundRectPath(ctx, 1, y, w - 2, h - 1, 7);
+    roundRectPath(ctx, 1, y, w - 2, h - 1, 8);
     ctx.fill();
 
-    // eye symbol (NVIDIA-ish) — small green-on-black square glyph
+    // NVIDIA 眼形标
     ctx.fillStyle = THEME.black;
-    roundRectPath(ctx, 7, y + 5, 14, 14, 3);
+    roundRectPath(ctx, 8, y + 5.5, 15, 15, 3.5);
     ctx.fill();
     ctx.fillStyle = THEME.greenBright;
     ctx.beginPath();
-    ctx.ellipse(14, y + 12, 5.2, 3.4, 0, 0, Math.PI * 2);
+    ctx.ellipse(15.5, y + 13, 5.4, 3.6, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = THEME.black;
     ctx.beginPath();
-    ctx.arc(14, y + 12, 1.7, 0, Math.PI * 2);
+    ctx.arc(15.5, y + 13, 1.8, 0, Math.PI * 2);
     ctx.fill();
 
-    // text
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
-    ctx.font = "bold 11px 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif";
-    ctx.fillStyle = THEME.badgeText;
-    ctx.fillText("NVIDIA RTX", 26, y + h / 2 + 0.5);
+    ctx.font = "bold 12px 'Segoe UI', 'Microsoft YaHei', sans-serif";
+    ctx.fillStyle = THEME.footerText;
+    ctx.fillText("NVIDIA RTX", 29, y + h / 2 + 0.5);
 
     ctx.textAlign = "right";
-    ctx.font = "bold 10px 'Segoe UI', 'Microsoft YaHei', Consolas, monospace";
-    ctx.fillStyle = THEME.black;
-    ctx.fillText(badge, w - 9, y + h / 2 + 0.5);
+    ctx.font = "bold 11px 'Segoe UI', 'Microsoft YaHei', sans-serif";
+    ctx.fillStyle = THEME.badgeText;
+    ctx.fillText(badge, w - 10, y + h / 2 + 0.5);
     ctx.restore();
 }
 
 function drawCollapsedStrip(ctx, node, badge) {
     ctx.save();
     ctx.fillStyle = THEME.green;
-    roundRectPath(ctx, 1, 1, node.size[0] - 2, node.size[1] - 2, 6);
+    roundRectPath(ctx, 1, 1, node.size[0] - 2, node.size[1] - 2, 7);
     ctx.fill();
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
-    ctx.font = "bold 12px 'Segoe UI', Arial";
-    ctx.fillStyle = THEME.black;
+    ctx.font = "bold 13px 'Segoe UI', 'Microsoft YaHei', sans-serif";
+    ctx.fillStyle = THEME.footerText;
     ctx.fillText("NVIDIA RTX · " + badge, 10, node.size[1] / 2 + 0.5);
     ctx.restore();
+}
+
+function localizeWidgets(node) {
+    if (!node.widgets) return;
+    for (const w of node.widgets) {
+        const cn = LABEL_CN[w.name];
+        if (cn && w.name !== cn) {
+            try { w.label = cn; } catch (e) { /* ignore */ }
+        }
+    }
 }
 
 app.registerExtension({
@@ -107,12 +136,36 @@ app.registerExtension({
         const baseOnNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             const r = baseOnNodeCreated ? baseOnNodeCreated.apply(this, arguments) : undefined;
-            this.color = THEME.green;          // title bar
-            this.bgcolor = THEME.panel;        // body
-            if ("title_color" in this) this.title_color = THEME.black;
-            if ("title_text_color" in this) this.title_text_color = THEME.black;
+            this.color = THEME.titleBg;   // 标题条：黑底（主题白字，对比清晰）
+            this.bgcolor = THEME.panel;   // 主体
+            localizeWidgets(this);
             this._rtxBadge = badge;
             return r;
+        };
+
+        // 中文化标题（覆盖 litegraph 绘制的 title 文本）
+        const baseDrawTitle = nodeType.prototype.onDrawTitle;
+        nodeType.prototype.onDrawTitle = function (ctx) {
+            if (baseDrawTitle) baseDrawTitle.apply(this, arguments);
+            try {
+                if (this.flags && this.flags.collapsed) return;
+                ctx.save();
+                ctx.textBaseline = "middle";
+                ctx.textAlign = "left";
+                ctx.font = "bold 13px 'Segoe UI', 'Microsoft YaHei', sans-serif";
+                // 擦掉原英文标题行，写中文
+                const th = LiteGraph.NODE_TITLE_HEIGHT || 30;
+                ctx.fillStyle = THEME.titleBg;
+                ctx.fillRect(20, -th, this.size[0] - 40, th);
+                ctx.fillStyle = "#f2f6ea";
+                ctx.fillText(this.title || "", 30, -th / 2);
+                // 标题右侧小绿点
+                ctx.fillStyle = THEME.green;
+                ctx.beginPath();
+                ctx.arc(this.size[0] - 14, -th / 2, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            } catch (e) { /* ignore */ }
         };
 
         const baseDrawBg = nodeType.prototype.onDrawBackground;
@@ -127,27 +180,14 @@ app.registerExtension({
             } catch (e) { /* never break the graph */ }
         };
 
-        // keep the footer below widgets: grow node a touch on first size
-        const baseOnResize = nodeType.prototype.onResize;
-        nodeType.prototype.onResize = function (size) {
-            const r = baseOnResize ? baseOnResize.apply(this, arguments) : undefined;
-            if (!this.flags || !this.flags.collapsed) {
-                if (!this._rtxPadApplied) {
-                    this._rtxPadApplied = true;
-                    size[1] += 26;
-                }
-            }
+        // 预留底部品牌条空间
+        const baseComputeSize = nodeType.prototype.computeSize;
+        nodeType.prototype.computeSize = function (out) {
+            const r = baseComputeSize
+                ? baseComputeSize.apply(this, arguments)
+                : (out || [200, 100]);
+            if (!this.flags || !this.flags.collapsed) r[1] += 28;
             return r;
         };
-    },
-
-    // high-contrast tweak: make combo/text widgets readable on dark panels
-    nodeCreated(node) {
-        if (!node.widgets) return;
-        for (const w of node.widgets) {
-            if (w.type === "combo" || w.type === "text" || w.type === "number") {
-                if ("advanced" in w) w.advanced = w.advanced; // no-op, keep layout
-            }
-        }
     },
 });
