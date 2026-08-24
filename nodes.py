@@ -44,9 +44,9 @@ def _ensure_rife(auto_download):
 
 
 # ---------------------------------------------------------------------------
-# DLSS-style presets & quality tiers (mapped to the NVIDIA VSR engines we have)
+# 画质档位与风格预设（映射到 NVIDIA VSR 官方引擎）
 # ---------------------------------------------------------------------------
-# 超分辨率档位 (DLSS-style quality tiers) -> target scale
+# 超分辨率档位 -> 目标倍率
 QUALITY_TIERS = [
     "DLAA（原生 1x）",
     "质量 (2x)",
@@ -55,8 +55,8 @@ QUALITY_TIERS = [
     "极致性能 (4x)",
 ]
 
-# DLSS4-style presets A..M -> (mode: conservative=0/aggressive=1, strength)
-# Higher letters = more aggressive/enhanced look (like DLSS preset progression).
+# 风格预设 A..M -> (模式: 保守=0/激进=1, 强度)
+# 字母越靠后越激进/增强效果越明显。
 PRESETS = [
     ("A", 0, 0.20), ("B", 0, 0.40), ("C", 1, 0.40), ("D", 1, 0.60),
     ("E", 0, 0.40), ("F", 1, 0.50), ("G", 1, 0.70), ("H", 0, 0.40),
@@ -130,7 +130,7 @@ class RTXMT_ModelManager:
 # ---------------------------------------------------------------------------
 class RTXMT_VSR_Upscale:
     """Image super-resolution with NVIDIA RTX VSR.
-    DLSS-style: quality tier (DLAA..Ultra Performance) x preset (A..M),
+    画质档位（DLAA..极致性能）x 风格预设（A..M）,
     plus manual model / passes / target size for full control."""
 
     @classmethod

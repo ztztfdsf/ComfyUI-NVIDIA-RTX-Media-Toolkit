@@ -1,7 +1,7 @@
 [project]
 name = "ComfyUI-NVIDIA-RTX-Media-Toolkit"
 version = "1.1.0"
-description = "NVIDIA RTX Video Super Resolution + DLISR AI photo upscale (2x/4x/8x) + RIFE frame interpolation for ComfyUI. DLSS-style quality tiers (DLAA..Ultra Performance) x presets (A..M), FPS multiplier, per-architecture (RTX 20/30/40/50) model auto-download."
+description = "NVIDIA RTX media toolkit for ComfyUI: VSR video super-resolution, DLISR AI photo upscale (2x/4x/8x) and RIFE frame interpolation, all on the driver NGX pipeline. RTX 20-50 series, models auto-download."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

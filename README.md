@@ -1,7 +1,7 @@
 # ComfyUI-NVIDIA-RTX-Media-Toolkit
 
-NVIDIA RTX Video Super Resolution + Frame Interpolation for ComfyUI.
-带 **DLSS 风格设置**（超分辨率档位 × 预设 A–M × FPS 倍增器）的超分/插帧全能节点。
+NVIDIA RTX 官方 AI 媒体处理套件 for ComfyUI。
+**视频超分（VSR）× 照片AI超分（DLISR）× 智能插帧（RIFE）** 三合一。
 
 - **超分**：调用 NVIDIA Video Effects SDK 的 RTX Video Super Resolution 官方模型
   （2x / 3x / 4x × conservative / aggressive 共 6 种），按 GPU 架构自动下载对应引擎
@@ -23,11 +23,11 @@ NVIDIA RTX Video Super Resolution + Frame Interpolation for ComfyUI.
 | **RIFE Frame Interpolate** | 帧序列插帧，2x / 4x / 8x |
 | **RTX Video Pipeline (SR + Interp)** | 视频文件一站式：超分 → 插帧 → 输出 mp4 |
 
-## DLSS 风格选项
+## 档位与预设
 
-- **超分辨率档位**：`DLAA (1x)` / `Quality (2x)` / `Balanced (2x)` / `Performance (3x)` / `Ultra Performance (4x)`
-- **预设 A–M**：映射 NVIDIA VSR 模型的 conservative/aggressive 模式 + strength 强度
-- **FPS 倍增器**：1x / 2x / 4x / 8x
+- **画质档位**：`DLAA（原生 1x）` / `质量 (2x)` / `均衡 (2x)` / `性能 (3x)` / `极致性能 (4x)`
+- **风格预设 A–M**：映射 NVIDIA VSR 模型的保守/激进模式 + 强度
+- **帧率倍增器**：1x / 2x / 4x / 8x
 - **超分次数 passes / 目标长边 target_long_side**：精确控制输出尺寸
 
 ## 安装
@@ -45,11 +45,11 @@ python -m pip install -r requirements.txt   # 使用 ComfyUI 的 python
 
 > 仓库不包含大型模型文件（`bin/`、`rife/` 由脚本自动下载，见 `.gitignore`）。
 
-## 为什么不用 DLSS（大力水手）做视频？
+## 为什么用 VSR/DLISR 而不是游戏超分技术？
 
-DLSS 是游戏技术，超分需要运动矢量 + 深度缓冲、帧生成需要引擎光流，
-普通视频没有这些数据。视频场景的 NVIDIA 官方方案是 RTX VSR（已集成）；
-插帧使用开源 RIFE（效果与 DLSS 帧生成同级）。
+游戏超分是实时渲染技术，需要运动矢量 + 深度缓冲、帧生成需要引擎光流，
+普通视频和图片没有这些数据。本包使用的是 NVIDIA 官方面向媒体的方案：
+视频用 RTX VSR、照片用 DLISR（NVIDIA App 同款）；插帧使用开源 RIFE。
 
 ## 兼容性 / 限制
 
@@ -67,7 +67,7 @@ DLSS 是游戏技术，超分需要运动矢量 + 深度缓冲、帧生成需要
 
 ```
 ComfyUI-NVIDIA-RTX-Media-Toolkit/
-├─ nodes.py          # 节点定义（DLSS 风格档位/预设/FPS 倍增器）
+├─ nodes.py          # 节点定义（画质档位/预设/帧率倍增器）
 ├─ nvcore/           # SR(ctypes) / RIFE(onnx) / 下载器 / NGX DLISR
 │  └─ ngx/           # NGX 发现 / 授权补丁 / DLISR ctypes 封装
 ├─ bin/<sm_xx>/      # 各架构 SDK 运行时 + SR 引擎（自动下载，不入库）

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """RIFE v4.9 frame interpolation (ONNX, CUDA) - used for video frame doubling.
 
-Note: NVIDIA does not ship a public *video* frame-interpolation model (DLSS 3
+Note: NVIDIA 没有公开的*视频*插帧模型（游戏帧生成
 Frame Generation is game-only). We use the open-source RIFE model, which runs
 on NVIDIA GPUs via onnxruntime CUDA, to provide the interpolation feature.
 """
