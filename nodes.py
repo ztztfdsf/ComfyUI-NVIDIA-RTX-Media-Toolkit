@@ -138,8 +138,8 @@ class RTXMT_ImageUpscale:
             },
         }
 
-    RETURN_TYPES = ("IMAGE", "FLOAT", "INT", "INT")
-    RETURN_NAMES = ("图像", "放大倍数", "宽", "高")
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("图像",)
     FUNCTION = "execute"
     CATEGORY = "图像/超分放大"
 
@@ -147,17 +147,16 @@ class RTXMT_ImageUpscale:
                 target_long_side, manual_model, model, strength,
                 keep_input_limits, tile_size, overlap, auto_download):
         if engine == ENGINE_DLISR:
-            out, factor = self._run_dlisr(image, scale, auto_download)
+            out = self._run_dlisr(image, scale)
         elif engine == ENGINE_VSR_TILED:
-            out, factor = self._run_vsr_tiled(image, model, strength, tile_size, overlap, auto_download)
+            out = self._run_vsr_tiled(image, model, strength, tile_size, overlap, auto_download)
         else:
-            out, factor = self._run_vsr(image, quality_tier, preset, passes, target_long_side,
-                                        manual_model, model, strength, keep_input_limits, auto_download)
-        h, w = out.shape[1], out.shape[2]
-        return (out, float(factor), w, h)
+            out = self._run_vsr(image, quality_tier, preset, passes, target_long_side,
+                                manual_model, model, strength, keep_input_limits, auto_download)
+        return (out,)
 
     # -- DLISR --------------------------------------------------------------
-    def _run_dlisr(self, image, scale, auto_download):
+    def _run_dlisr(self, image, scale):
         factor = self.SCALES[scale]
         session = ngx_dlisr.get_session()
         out = []
@@ -165,7 +164,7 @@ class RTXMT_ImageUpscale:
             arr = (image[i].cpu().numpy() * 255.0).round().clip(0, 255).astype("uint8")
             up = session.upscale(arr, factor)
             out.append(torch.from_numpy(up.astype("float32") / 255.0))
-        return torch.stack(out), factor
+        return torch.stack(out)
 
     # -- VSR 标准 ------------------------------------------------------------
     def _run_vsr(self, image, quality_tier, preset, passes, target_long_side,
@@ -177,7 +176,7 @@ class RTXMT_ImageUpscale:
         else:
             sel_model, sel_strength, scale = _tier_preset_to_model(quality_tier, preset)
             if sel_model is None:
-                return image, 1.0
+                return image
         _ensure_sr(sm, auto_download)
 
         md = sr._MODEL_BY_NAME[sel_model]
@@ -206,7 +205,7 @@ class RTXMT_ImageUpscale:
                         mode="bicubic", align_corners=False, antialias=True,
                     ).squeeze(0).permute(1, 2, 0).clamp(0, 1)
             frames.append(img.cpu())
-        return torch.stack(frames), md["scale"]
+        return torch.stack(frames)
 
     # -- VSR 分块 ------------------------------------------------------------
     def _run_vsr_tiled(self, image, model, strength, tile_size, overlap, auto_download):
@@ -234,7 +233,7 @@ class RTXMT_ImageUpscale:
                     out[y1 * md["scale"]:oy2, x1 * md["scale"]:ox2] = \
                         up[: oy2 - y1 * md["scale"], : ox2 - x1 * md["scale"]]
             frames.append(out.clamp(0, 1).cpu())
-        return torch.stack(frames), md["scale"]
+        return torch.stack(frames)
 
 
 # ---------------------------------------------------------------------------
