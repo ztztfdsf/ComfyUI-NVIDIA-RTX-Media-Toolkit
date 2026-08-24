@@ -76,6 +76,35 @@ function roundRectPath(ctx, x, y, w, h, r) {
     ctx.closePath();
 }
 
+// NVIDIA 风格 eye：左实心旋涡半圆 + 右开口弧线（官方 logo 特征）
+function drawNvEye(ctx, x, y, size, fg, bg) {
+    ctx.save();
+    ctx.fillStyle = bg;
+    roundRectPath(ctx, x, y, size, size, size * 0.2);
+    ctx.fill();
+    const cx = x + size * 0.5, cy = y + size * 0.5;
+    const r = size * 0.30;
+    // 左半：实心旋涡体
+    ctx.fillStyle = fg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, Math.PI * 0.5, Math.PI * 1.5);
+    ctx.closePath();
+    ctx.fill();
+    // 左半内圈挖空（旋涡感）
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.45, Math.PI * 0.5, Math.PI * 1.5);
+    ctx.closePath();
+    ctx.fill();
+    // 右半：开口弧线
+    ctx.strokeStyle = fg;
+    ctx.lineWidth = Math.max(1.2, size * 0.085);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.72, -Math.PI * 0.42, Math.PI * 0.42);
+    ctx.stroke();
+    ctx.restore();
+}
+
 function drawBrandBar(ctx, node, badge) {
     const h = 26;
     const w = node.size[0];
@@ -88,18 +117,8 @@ function drawBrandBar(ctx, node, badge) {
     ctx.fillStyle = g;
     roundRectPath(ctx, 1, y, w - 2, h - 1, 8);
     ctx.fill();
-    // NVIDIA 眼形标
-    ctx.fillStyle = THEME.black;
-    roundRectPath(ctx, 8, y + 5.5, 15, 15, 3.5);
-    ctx.fill();
-    ctx.fillStyle = THEME.greenBright;
-    ctx.beginPath();
-    ctx.ellipse(15.5, y + 13, 5.4, 3.6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = THEME.black;
-    ctx.beginPath();
-    ctx.arc(15.5, y + 13, 1.8, 0, Math.PI * 2);
-    ctx.fill();
+    // NVIDIA eye 标
+    drawNvEye(ctx, 8, y + 5, 16, THEME.greenBright, THEME.black);
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
     ctx.font = "bold 12px 'Segoe UI', 'Microsoft YaHei', sans-serif";
@@ -326,6 +345,22 @@ app.registerExtension({
                     drawCollapsedStrip(ctx, this, this._rtxBadge || badge);
                 } else {
                     drawBrandBar(ctx, this, this._rtxBadge || badge);
+                    // 标题右侧 NVIDIA 眼形标（标题区在节点体上方，负坐标）
+                    const th = LiteGraph.NODE_TITLE_HEIGHT || 30;
+                    const bs = 17;
+                    const bx = this.size[0] - bs - 12;
+                    const by = -th / 2 - bs / 2;
+                    ctx.fillStyle = THEME.black;
+                    roundRectPath(ctx, bx, by, bs, bs, 3.5);
+                    ctx.fill();
+                    ctx.fillStyle = THEME.greenBright;
+                    ctx.beginPath();
+                    ctx.ellipse(bx + bs / 2, by + bs / 2, bs * 0.34, bs * 0.23, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = THEME.black;
+                    ctx.beginPath();
+                    ctx.arc(bx + bs / 2, by + bs / 2, bs * 0.11, 0, Math.PI * 2);
+                    ctx.fill();
                 }
             } catch (e) { /* never break the graph */ }
         };
