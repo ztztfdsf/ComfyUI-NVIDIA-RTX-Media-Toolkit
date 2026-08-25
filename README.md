@@ -45,11 +45,6 @@ python -m pip install -r requirements.txt   # 使用 ComfyUI 的 python
 
 > 仓库不包含大型模型文件（`bin/`、`rife/` 由脚本自动下载，见 `.gitignore`）。
 
-## 为什么用 VSR/DLISR 而不是游戏超分技术？
-
-游戏超分是实时渲染技术，需要运动矢量 + 深度缓冲、帧生成需要引擎光流，
-普通视频和图片没有这些数据。本包使用的是 NVIDIA 官方面向媒体的方案：
-视频用 RTX VSR、照片用 DLISR（NVIDIA App 同款）；插帧使用开源 RIFE。
 
 ## 兼容性 / 限制
 
