@@ -343,21 +343,35 @@ function openSettingsDialog() {
     }
 
     async function refresh() {
-        busy(false);
+        // 立即显示 loading（消除黑箱感）
+        busy(true);
+        rows.innerHTML = `<div class="rtxmt-row" style="opacity:.5"><span class="rtxmt-spin"></span><span style="font-size:12px;color:#9fb08a;">正在检查组件状态…</span></div>`;
+        panel.querySelector("#rtxmt-gpu-name").innerHTML = '<span class="rtxmt-spin"></span>检测中…';
+        panel.querySelector("#rtxmt-gpu-sub").textContent = "";
+        progWrap.hidden = false;
+        const bar = panel.querySelector("#rtxmt-prog-bar");
+        bar.style.width = "100%";
+        bar.style.background = "linear-gradient(90deg,#76B900,#8fd400)";
+        bar.style.animation = "rtxmt-pulse 1.2s ease-in-out infinite";
+        panel.querySelector("#rtxmt-prog-label").textContent = "正在查询…";
+        panel.querySelector("#rtxmt-prog-pct").textContent = "";
+
         try {
             const d = await fetchJSON("/rtxmt/status");
+            bar.style.animation = "";
+            progWrap.hidden = true;
             renderRows(d);
-            panel.querySelector("#rtxmt-gpu-name").innerHTML =
-                (d.gpu || "未知设备") ;
+            panel.querySelector("#rtxmt-gpu-name").textContent = d.gpu || "未知设备";
             panel.querySelector("#rtxmt-gpu-sub").textContent = `${d.label ?? ""} ${d.sm ?? ""}`;
             applyAutoDownloadLock(d.all_ready);
 
             const t = d.task || {};
             if (t.running) {
                 progWrap.hidden = false;
+                bar.style.animation = "";
                 const pct = Math.max(0, Math.min(100, t.pct ?? 0));
                 panel.querySelector("#rtxmt-prog-pct").textContent = pct.toFixed(1) + "%";
-                panel.querySelector("#rtxmt-prog-bar").style.width = pct + "%";
+                bar.style.width = pct + "%";
                 panel.querySelector("#rtxmt-prog-label").textContent = "后台任务进行中…";
                 logEl.textContent = (t.log || []).slice(-1).join(" ") || "";
                 busy(true);
@@ -367,9 +381,13 @@ function openSettingsDialog() {
                 progWrap.hidden = true;
                 logEl.textContent = t.done ? "上次任务已完成" : "";
                 clearTimeout(_settingsRefreshTimer);
+                busy(false);
             }
         } catch (e) {
+            bar.style.animation = "";
+            progWrap.hidden = true;
             logEl.textContent = "状态获取失败：" + e.message;
+            busy(false);
         }
     }
 
