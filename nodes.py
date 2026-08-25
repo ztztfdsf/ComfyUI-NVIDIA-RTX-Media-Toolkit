@@ -357,7 +357,7 @@ class RTXMT_VideoEnhance:
 # ---------------------------------------------------------------------------
 import threading
 
-_MGR_TASK = {"running": False, "log": [], "done": False, "error": None}
+_MGR_TASK = {"running": False, "log": [], "done": False, "error": None, "pct": 0.0}
 
 
 def _mgr_status_dict():
@@ -372,18 +372,26 @@ def _mgr_status_dict():
         d["vsr_installed"] = bool(download.models_present(info["sm"]))
     except Exception as e:
         d["error"] = str(e)
+    d["all_ready"] = bool(d.get("vsr_installed")) and bool(d.get("rife_installed"))
     return d
 
 
 def _mgr_progress(line):
-    _MGR_TASK["log"].append(str(line))
+    line = str(line)
+    _MGR_TASK["log"].append(line)
+    m = re.search(r"(\d+(?:\.\d+)?)\s*%", line)
+    if m:
+        try:
+            _MGR_TASK["pct"] = min(100.0, float(m.group(1)))
+        except ValueError:
+            pass
     if len(_MGR_TASK["log"]) > 200:
         del _MGR_TASK["log"][:-200]
 
 
 def _mgr_run(action):
     def worker():
-        _MGR_TASK.update(running=True, log=[], done=False, error=None)
+        _MGR_TASK.update(running=True, log=[], done=False, error=None, pct=0.0)
         try:
             if action in ("sdk", "all"):
                 r = download.download_sdk(progress=_mgr_progress)
