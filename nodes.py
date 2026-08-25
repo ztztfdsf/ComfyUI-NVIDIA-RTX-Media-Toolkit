@@ -353,35 +353,79 @@ class RTXMT_VideoEnhance:
 
 
 # ---------------------------------------------------------------------------
-class RTXMT_ModelManager:
-    """模型/驱动管理执行器（前端 ⚙ 设置按钮的后端；也可单独使用）。"""
+# 模型/驱动管理 HTTP API（前端 ⚙ 设置按钮直接调用，无需独立节点）
+# ---------------------------------------------------------------------------
+import threading
 
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "action": (["检查状态", "下载SDK引擎", "下载RIFE模型", "全部下载"],),
-            },
-        }
+_MGR_TASK = {"running": False, "log": [], "done": False, "error": None}
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("状态",)
-    FUNCTION = "run"
-    CATEGORY = "图像/超分放大"
 
-    def run(self, action):
-        lines = []
+def _mgr_status_dict():
+    d = {"gpu": None, "sm": None, "label": None, "vsr_installed": None,
+         "rife_installed": os.path.isfile(common.RIFE_MODEL),
+         "task": dict(_MGR_TASK)}
+    try:
+        info = common.arch_info()
+        d["gpu"] = torch.cuda.get_device_name(0)
+        d["sm"] = info["sm"]
+        d["label"] = info["label"]
+        d["vsr_installed"] = bool(download.models_present(info["sm"]))
+    except Exception as e:
+        d["error"] = str(e)
+    return d
+
+
+def _mgr_progress(line):
+    _MGR_TASK["log"].append(str(line))
+    if len(_MGR_TASK["log"]) > 200:
+        del _MGR_TASK["log"][:-200]
+
+
+def _mgr_run(action):
+    def worker():
+        _MGR_TASK.update(running=True, log=[], done=False, error=None)
         try:
-            info = common.arch_info()
-            lines.append(f"显卡：{torch.cuda.get_device_name(0)}（{info['label']}，{info['sm']}）")
-            lines.append(f"VSR 引擎已安装：{'是' if download.models_present(info['sm']) else '否'}")
-            lines.append(f"RIFE 模型已安装：{'是' if os.path.isfile(common.RIFE_MODEL) else '否'}")
-            if action in ("下载SDK引擎", "全部下载"):
-                r = download.download_sdk(progress=print)
-                lines.append(r["message"])
-            if action in ("下载RIFE模型", "全部下载"):
+            if action in ("sdk", "all"):
+                r = download.download_sdk(progress=_mgr_progress)
+                _MGR_TASK["log"].append(str(r.get("message", "SDK 引擎就绪")))
+            if action in ("rife", "all"):
                 _ensure_rife(auto_download=True)
-                lines.append("RIFE 模型已安装。")
+                _MGR_TASK["log"].append("RIFE 模型已安装。")
+            _MGR_TASK["log"].append("完成")
         except Exception as e:
-            lines.append(f"错误：{e}")
-        return ("\n".join(lines),)
+            _MGR_TASK["error"] = str(e)
+            _MGR_TASK["log"].append(f"错误：{e}")
+        finally:
+            _MGR_TASK["running"] = False
+            _MGR_TASK["done"] = True
+    threading.Thread(target=worker, daemon=True).start()
+
+
+try:
+    from server import PromptServer
+    from aiohttp import web
+
+    _ps = PromptServer.instance
+    print(f"[RTX-Media-Toolkit] routes: PromptServer={_ps is not None}")
+    if _ps is not None:
+        @_ps.routes.get("/rtxmt/status")
+        async def rtxmt_status(request):
+            return web.json_response(_mgr_status_dict())
+
+        @_ps.routes.post("/rtxmt/download")
+        async def rtxmt_download(request):
+            try:
+                data = await request.json()
+            except Exception:
+                data = {}
+            action = data.get("action", "status")
+            if action in ("sdk", "rife", "all"):
+                if _MGR_TASK["running"]:
+                    return web.json_response({"started": False, "reason": "任务进行中"})
+                _mgr_run(action)
+                return web.json_response({"started": True})
+            return web.json_response({"started": False, "reason": "未知操作"})
+        print("[RTX-Media-Toolkit] /rtxmt/status + /rtxmt/download 已注册")
+except Exception as _e:  # 非 ComfyUI 环境（独立测试）跳过路由
+    import traceback; traceback.print_exc()
+    print(f"[RTX-Media-Toolkit] HTTP API 未启用: {_e}")

@@ -192,34 +192,11 @@ function applyVideoSwitches(node) {
     node.setSize(node.computeSize());
 }
 
-// ---- ⚙ 设置弹窗 -----------------------------------------------------------
-function runManagerAction(action, onDone) {
-    const workflow = {
-        prompt: {
-            "1": { class_type: "RTXMT_ModelManager", inputs: { action }, _meta: { title: "settings" } },
-        },
-        client_id: "rtxmt-settings",
-    };
-    return fetch("/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(workflow) })
-        .then(r => r.json())
-        .then(({ prompt_id }) => new Promise(resolve => {
-            const tick = async () => {
-                try {
-                    const h = await (await fetch(`/history/${prompt_id}`)).json();
-                    if (h[prompt_id] && h[prompt_id].status?.completed) {
-                        const outs = h[prompt_id].outputs?.["1"]?.ui?.text
-                            || h[prompt_id].outputs?.["1"]?.string
-                            || [];
-                        const text = Array.isArray(outs) ? outs.join("\n") : String(outs ?? "完成");
-                        resolve(text);
-                        onDone && onDone(text);
-                        return;
-                    }
-                } catch (e) { /* ignore */ }
-                setTimeout(tick, 1500);
-            };
-            tick();
-        }));
+// ---- ⚙ 设置弹窗（走 /rtxmt/* 自定义 API）----------------------------------
+async function fetchJSON(url, opts) {
+    const r = await fetch(url, opts);
+    if (!r.ok) throw new Error(`${r.status}`);
+    return r.json();
 }
 
 function openSettingsDialog() {
@@ -234,7 +211,7 @@ function openSettingsDialog() {
     });
     const panel = document.createElement("div");
     Object.assign(panel.style, {
-        width: "460px", background: "#101210", border: "1px solid #2e3b1c",
+        width: "480px", background: "#101210", border: "1px solid #2e3b1c",
         borderRadius: "10px", boxShadow: "0 12px 48px rgba(0,0,0,.6)", overflow: "hidden",
         color: "#e8f0dd",
     });
@@ -245,28 +222,67 @@ function openSettingsDialog() {
         <span id="rtxmt-close" style="cursor:pointer;color:#0e1206;font-weight:700;font-size:16px;padding:0 4px;">✕</span>
       </div>
       <div style="padding:14px;">
-        <div id="rtxmt-status" style="background:#0b0d09;border:1px solid #2e3b1c;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.7;white-space:pre-wrap;min-height:88px;color:#cfe0b8;">正在检查状态…</div>
+        <div id="rtxmt-status" style="background:#0b0d09;border:1px solid #2e3b1c;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.7;white-space:pre-wrap;min-height:110px;color:#cfe0b8;">正在检查状态…</div>
         <div style="display:flex;gap:8px;margin-top:12px;">
-          <button data-act="检查状态"   style="flex:1;padding:8px 0;border:1px solid #76B900;background:#141a10;color:#cfe0b8;border-radius:6px;cursor:pointer;">检查状态</button>
-          <button data-act="下载SDK引擎" style="flex:1;padding:8px 0;border:1px solid #76B900;background:#141a10;color:#cfe0b8;border-radius:6px;cursor:pointer;">下载 VSR 引擎</button>
-          <button data-act="下载RIFE模型" style="flex:1;padding:8px 0;border:1px solid #76B900;background:#141a10;color:#cfe0b8;border-radius:6px;cursor:pointer;">下载 RIFE 模型</button>
-          <button data-act="全部下载"   style="flex:1;padding:8px 0;border:none;background:#76B900;color:#0e1206;font-weight:700;border-radius:6px;cursor:pointer;">一键全部下载</button>
+          <button data-act="status"   style="flex:1;padding:8px 0;border:1px solid #76B900;background:#141a10;color:#cfe0b8;border-radius:6px;cursor:pointer;">刷新状态</button>
+          <button data-act="sdk"      style="flex:1;padding:8px 0;border:1px solid #76B900;background:#141a10;color:#cfe0b8;border-radius:6px;cursor:pointer;">下载 VSR 引擎</button>
+          <button data-act="rife"     style="flex:1;padding:8px 0;border:1px solid #76B900;background:#141a10;color:#cfe0b8;border-radius:6px;cursor:pointer;">下载 RIFE 模型</button>
+          <button data-act="all"      style="flex:1;padding:8px 0;border:none;background:#76B900;color:#0e1206;font-weight:700;border-radius:6px;cursor:pointer;">一键全部下载</button>
         </div>
         <div style="margin-top:10px;font-size:11px;color:#7d8a6a;">VSR 引擎约 750 MB（按显卡架构自动选择），RIFE 模型约 21 MB；DLISR 照片超分无需下载模型。</div>
       </div>`;
     mask.appendChild(panel);
     document.body.appendChild(mask);
     const status = panel.querySelector("#rtxmt-status");
-    const busy = (b) => { panel.querySelectorAll("button[data-act]").forEach(x => x.disabled = b); };
-    const run = (act) => {
-        busy(true);
-        status.textContent = `正在执行：${act} …（下载可能需要几分钟，请勿关闭）`;
-        runManagerAction(act, text => { status.textContent = text || "完成"; busy(false); });
-    };
+    const busy = b => { panel.querySelectorAll("button[data-act]").forEach(x => x.disabled = b); };
+
+    async function refresh() {
+        busy(false);
+        try {
+            const d = await fetchJSON("/rtxmt/status");
+            const t = d.task || {};
+            let txt = "";
+            txt += `显卡：${d.gpu ?? "未知"}（${d.label ?? ""} ${d.sm ?? ""}）
+`;
+            txt += `VSR 引擎：${d.vsr_installed ? "✅ 已安装" : "❌ 未安装"}
+`;
+            txt += `RIFE 模型：${d.rife_installed ? "✅ 已安装" : "❌ 未安装"}
+`;
+            txt += `DLISR 照片超分：✅ 免模型（驱动 NGX 管线）
+`;
+            if (t.running) {
+                txt += `
+⏳ 后台任务进行中…
+` + (t.log || []).slice(-6).join("\n");
+                setTimeout(refresh, 1500);
+                busy(true);
+            } else if (t.error) {
+                txt += `
+⚠ 上次任务错误：${t.error}`;
+            } else if (t.done) {
+                txt += `
+✅ 上次任务已完成`;
+            }
+            status.textContent = txt;
+        } catch (e) {
+            status.textContent = "状态获取失败：" + e.message;
+        }
+    }
+
     panel.querySelector("#rtxmt-close").onclick = () => mask.remove();
     mask.onclick = e => { if (e.target === mask) mask.remove(); };
-    panel.querySelectorAll("button[data-act]").forEach(b => b.onclick = () => run(b.dataset.act));
-    run("检查状态");
+    panel.querySelectorAll("button[data-act]").forEach(b => b.onclick = async () => {
+        const act = b.dataset.act;
+        if (act === "status") { await refresh(); return; }
+        try {
+            const r = await fetchJSON("/rtxmt/download", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: act }) });
+            if (!r.started) status.textContent = "⚠ " + (r.reason || "无法启动");
+        } catch (e) {
+            status.textContent = "启动失败：" + e.message;
+        }
+        await refresh();
+    });
+    refresh();
 }
 
 function addSettingsButton(node) {
