@@ -7,6 +7,7 @@
 """
 
 import os
+import re
 
 import torch
 
@@ -303,6 +304,14 @@ class RTXMT_VideoEnhance:
             if not output_path:
                 root, ext = os.path.splitext(video_path)
                 output_path = f"{root}_rtxmt{ext}"
+
+            def _video_frames():
+                while True:
+                    ok, frame = cap.read()
+                    if not ok:
+                        break
+                    yield torch.from_numpy(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).float() / 255.0
+            src_frames = _video_frames()
 
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         writer = None
