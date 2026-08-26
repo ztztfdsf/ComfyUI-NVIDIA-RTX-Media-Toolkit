@@ -124,7 +124,12 @@ class RTXMT_ImageUpscale:
             "required": {
                 "engine": (ENGINES, {"default": ENGINE_DLISR}),
                 "image": ("IMAGE",),
+                "auto_download": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                # -- DLISR 组 --
                 "scale": (["2x", "4x", "8x"], {"default": "2x"}),
+                # -- VSR 标准组 --
                 "quality_tier": (QUALITY_TIERS, {"default": QUALITY_TIERS[4]}),
                 "preset": (PRESET_NAMES, {"default": PRESET_NAMES[10]}),
                 "passes": ("INT", {"default": 1, "min": 1, "max": 6, "step": 1}),
@@ -133,9 +138,9 @@ class RTXMT_ImageUpscale:
                 "model": (sr.MODEL_NAMES, {"default": "RTX VSR 4x 激进"}),
                 "strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05}),
                 "keep_input_limits": ("BOOLEAN", {"default": True}),
+                # -- VSR 分块组 --
                 "tile_size": ("INT", {"default": 512, "min": 128, "max": 1920, "step": 8}),
                 "overlap": ("INT", {"default": 16, "min": 0, "max": 64, "step": 8}),
-                "auto_download": ("BOOLEAN", {"default": True}),
             },
         }
 
@@ -144,9 +149,41 @@ class RTXMT_ImageUpscale:
     FUNCTION = "execute"
     CATEGORY = "图像/超分放大"
 
-    def execute(self, engine, image, scale, quality_tier, preset, passes,
-                target_long_side, manual_model, model, strength,
-                keep_input_limits, tile_size, overlap, auto_download):
+    # optional 参数的默认值（API 直调缺省时使用）
+    _DLISR_DEFAULTS = dict(scale="2x")
+    _VSR_DEFAULTS = dict(quality_tier=QUALITY_TIERS[4], preset=PRESET_NAMES[10],
+                         passes=1, target_long_side=0, manual_model=False,
+                         model="RTX VSR 4x 激进", strength=0.5, keep_input_limits=True)
+    _TILED_DEFAULTS = dict(model="RTX VSR 2x 激进", strength=0.5, tile_size=512, overlap=16)
+
+    def execute(self, engine, image, auto_download,
+                scale=None, quality_tier=None, preset=None, passes=None,
+                target_long_side=None, manual_model=None, model=None,
+                strength=None, keep_input_limits=None, tile_size=None, overlap=None):
+        # 未提供的 optional 参数回填默认值
+        if scale is None: scale = self._DLISR_DEFAULTS["scale"]
+        for k, v in self._VSR_DEFAULTS.items():
+            if locals()[k] is None:
+                if k == "quality_tier": quality_tier = v
+                elif k == "preset": preset = v
+                elif k == "passes": passes = v
+                elif k == "target_long_side": target_long_side = v
+                elif k == "manual_model": manual_model = v
+                elif k == "model": model = v
+                elif k == "strength": strength = v
+                elif k == "keep_input_limits": keep_input_limits = v
+        for k, v in self._TILED_DEFAULTS.items():
+            if k == "tile_size" and tile_size is None: tile_size = v
+            if k == "overlap" and overlap is None: overlap = v
+
+        if engine == ENGINE_DLISR:
+            out = self._run_dlisr(image, scale)
+        elif engine == ENGINE_VSR_TILED:
+            out = self._run_vsr_tiled(image, model, strength, tile_size, overlap, auto_download)
+        else:
+            out = self._run_vsr(image, quality_tier, preset, passes, target_long_side,
+                                manual_model, model, strength, keep_input_limits, auto_download)
+        return (out,)
         if engine == ENGINE_DLISR:
             out = self._run_dlisr(image, scale)
         elif engine == ENGINE_VSR_TILED:
